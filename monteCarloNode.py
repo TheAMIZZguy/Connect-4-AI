@@ -47,17 +47,16 @@ class MonteCarloNode():
         self.children[str(play)] = {"play": play, "node": childNode}
         return childNode
     
-    # Gets the PossibleMoves of the node
+    # Gets the PossibleMoves of the node by searching for existing children
     def PossibleMoves(self):
         posMoves = []
-        #self explanitory, get the possible moves from self.child and return
         for child in self.children.values():
             posMoves.append(child['play'])     
         return posMoves
     
     # Gets the unexpanded moves of node
     def UnexpandedMoves(self):
-        #Similar to Possible Moves, but only returns the unexpanded moves
+        # Similar to Possible Moves, but only returns the unexpanded moves
         unexMoves = []
         for child in self.children.values():
             if not child['node']:
@@ -66,7 +65,7 @@ class MonteCarloNode():
     
     # See if is a fully expaned node
     def IsFullyExpanded(self):
-        #If any children are None (unexpanded), it is not fully expanded
+        # If any children are None (unexpanded), it is not fully expanded
         for child in self.children.values():
             if not child['node']:
                 return False
@@ -74,13 +73,11 @@ class MonteCarloNode():
     
     # If the node is a Leaf Node
     def IsLeaf(self):
-        # return bool
-        if not self.children:
-            return True
-        return False
+        return not self.children
+
     
     # UCB1 Value of node,
-    def UCB1Value(self, bias):
+    def UCB1Value(self, bias=2):
         # usually the bias parameter is 2
         # the higher the bias, the more it favours unexplored plays
         return (self.wins/self.games) + math.sqrt(bias* math.log(self.parent.games) / self.games)

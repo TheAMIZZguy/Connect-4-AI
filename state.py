@@ -1,4 +1,5 @@
-class State(): #has the properties of a state for the game
+# Has the properties of a state for the game
+class State():
     def __init__(self, playHistory, board, player):
         self.playHistory = list(filter(len, playHistory))
         self.board = board
@@ -14,7 +15,7 @@ class State(): #has the properties of a state for the game
     def Hash2(self):
         return str(self.playHistory[:-1])
     
-    #just to visualize the board, the forHumans parameter if true removes the 3's from the board to make it easier to read 
+    # Just to visualize the board, removes the 3's from the board to make it easier to read
     def BoardForVictor(self, board):
 
         protoBoard = [row[:] for row in board]

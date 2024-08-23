@@ -5,55 +5,118 @@ from state import State
 
 """
     Board Deciphering:
-        Rows = 7   (horizontal)
-        Columns = 7   (veritcal)
+        Rows = 6     (horizontal)
+        Columns = 7  (vertical)
         
         0 means place without 'chip'
         1 means player 1 chip
         2 means player 2 chip
         3 means a place you can put a chip
 """
-    
-startBoard = [[0,0,0,0,0,0,0], #the board is a 6 row
-                 [0,0,0,0,0,0,0], # with 7 columns
-                 [0,0,0,0,0,0,0],
-                 [0,0,0,0,0,0,0],
-                 [0,0,0,0,0,0,0],
-                 [3,3,3,3,3,3,3]]
 
-class Game():
+#the board is 6 rows with 7 columns
+startBoard = [[0,0,0,0,0,0,0],
+              [0,0,0,0,0,0,0],
+              [0,0,0,0,0,0,0],
+              [0,0,0,0,0,0,0],
+              [0,0,0,0,0,0,0],
+              [3,3,3,3,3,3,3]]
 
-    #inizializes the root node with no parent, starting state and player1
-    def Start(self): 
-        # want to create copy so they dont edit each other
-        newBoard = startBoard[:]
-        return State([], newBoard, 1) 
-    
-    #gets the possible moves from the current board
-    def PossibleMoves(self, state): 
-        moves = [] #list of possible moves
-      
-        i = 0 # to mark the indexes of the possible moves
-        j = 0 # indexes start at 0, obv
-        for row in state.board:      
-            j = 0 #reset column index at each row
-            if 3 in row:
-                for column in row:                 
-                    #print(column)
-                    if column == 3: # if it finds a possible move
-                        #add it to possible moves from the Play class
-                        moves.append([i,j])
-                    j = j + 1
-            i = i + 1 # it is added
-        return moves #
-    
-    #makes the move from the player and updates the board
-    def AfterMove(self, state, move):
+"""
+Game as a class initializes the board and moves the game along
+The important capabilities are:
+- Obtaining what are the current possible moves
+- Finding what are the possible moves a player can make
+- Determining if someone has won the game
+"""
+class Game:
+
+    def __init__(self, board: list[list[int]] = None):
+        if board is None:
+            self.current_player = 1
+            self.board = [[0,0,0,0,0,0,0],
+                          [0,0,0,0,0,0,0],
+                          [0,0,0,0,0,0,0],
+                          [0,0,0,0,0,0,0],
+                          [0,0,0,0,0,0,0],
+                          [0,0,0,0,0,0,0]]
+            self.possible_moves = [[5,0],[5,1],[5,2],[5,3],[5,4],[5,5],[5,6]]
+        else:
+            self.board = board
+            self.current_player, self.possible_moves = self.SetupBoard(self.board)
+
+
+    """
+    Initializes the root node with no parent, starting state and player1
+    """
+    @staticmethod
+    def FindCurrentPlayer(board: list[list[int]]):
+        move_count = sum(value != 0 for row in board for value in row)
+        current_player = (move_count % 2) + 1
+
+        return current_player
+
+    """
+    Given a board, find whose turn it is and what moves are possible
+    """
+    @staticmethod
+    def SetupBoard(board: list[list[int]]):
+        move_count = 0
+        possible_moves = []
+
+        for col in range(len(board[0])):
+            for row in reversed(range(len(board))):
+                value = board[row][col]
+                if value != 0:
+                    move_count += 1
+                if value == 0:
+                    if row == len(board) - 1 or board[row + 1][col] != 0:
+                        possible_moves.append([row, col])
+                    break
+
+        return (move_count % 2) + 1, possible_moves
+
+    def GetBoardHash(self):
+        board_tuple = tuple(tuple(row) for row in self.board)
+        return hash(board_tuple)
+
+    def GetMirroredBoardHash(self):
+        # Mirror the board by reversing each row
+        mirrored_board = [row[::-1] for row in self.board]
+
+        # Convert the mirrored board to a tuple of tuples and hash it
+        mirrored_board_tuple = tuple(tuple(row) for row in mirrored_board)
+        return hash(mirrored_board_tuple)
+
+
+    """
+    Makes the move from the player and updates the game accordingly
+    """
+    def MakeMove(self, move):
+        # Make the move
+        self.board[move[0]][move[1]] = self.current_player
+
+        # Change the player
+        if self.current_player == 1:
+            self.current_player = 2
+        else:
+            self.current_player = 1
+
+        # Update possible moves
+        def UpdatePossibleMoves(self, col):
+            if self.possible_moves[col] > 0:
+                self.possible_moves[col] -= 1  # Move up by 1 due to gravity
+            else:
+                self.possible_moves.pop(col)  # Remove if it's already at the top
+        # TODO change the rest of stuff with possible moves so I can use this logic
+
+
         #The history of the play
         newHistory = (state.playHistory[:])
         #add the current play to history
         newHistory.append(move) 
-        #make this new state have the same board to edit. 
+        #make this new state have the same board to edit.
+
         newBoard = [row[:] for row in state.board]
         if newBoard[move[0]][move[1]] == 3: #making sure its a possible move
             newBoard[move[0]][move[1]] = state.player #make the move as the player
@@ -64,7 +127,7 @@ class Game():
         #print("PLAYER@:", newPlayer)
         return State(newHistory, newBoard, newPlayer) #new state
     
-    #inverts tbetween player 1 and 2, self explanitory
+    #inverts between player 1 and 2, self explanitory
     def InvertPlayer(self, player): 
         tempPlayer = player
         if tempPlayer == 1:
@@ -72,24 +135,12 @@ class Game():
         else:
             tempPlayer = 1
         return tempPlayer
-    
-    #just to visualize the board, the forHumans parameter if true removes the 3's from the board to make it easier to read 
-    def PrintBoard(self, board, forHumans):
-        if forHumans == True:
-            protoBoard = [row[:] for row in board]
-            
-            for row in range(len(protoBoard)):
-                for value in range(len(protoBoard[row])):
-                    if protoBoard[row][value] == 3:
-                        protoBoard[row][value] = 0
-                        
-            for row in protoBoard:         
-                print(row)
-            print("-")
-        else:
-            for row in board:         
-                print(row)
-            print("-")
+
+    def PrintBoard(self):
+        for row in self.board:
+            print(row)
+        print("-")
+
      
     #Simulates a random game from a state and current player
     def RandomGame(self, state, player):
@@ -98,7 +149,7 @@ class Game():
         while winner == -1:
             #self.PrintBoard(randomBoard)
             move = random.choice(self.PossibleMoves(state))
-            state.board = self.AfterMove(state, move[0], move[1], randomPlayer)
+            state.board = self.MakeMove(state, move[0], move[1], randomPlayer)
             winner = self.Winner(state.board)
             if self.PossibleMoves(state.board) == []:
                 winner = 0

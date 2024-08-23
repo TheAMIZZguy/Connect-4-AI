@@ -432,7 +432,7 @@ class MCTS():
             return
         move = random.choice(moves)
         #gets the new board state from the move,
-        childState = self.game.AfterMove(node.state, move)
+        childState = self.game.MakeMove(node.state, move)
         #gets the child's own possible moves and prepares the node for expansion
         childUnexpandedMoves = self.game.PossibleMoves(childState)
         childNode = node.Expand(move, childState, childUnexpandedMoves)
@@ -450,7 +450,7 @@ class MCTS():
         while winner == -1:
             moves = self.game.PossibleMoves(state)
             move = random.choice(moves)
-            state = self.game.AfterMove(state, move)
+            state = self.game.MakeMove(state, move)
             winner = self.game.Winner(state)
         return winner  
     
