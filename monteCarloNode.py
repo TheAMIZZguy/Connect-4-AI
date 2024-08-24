@@ -1,40 +1,30 @@
 import math
 
-class MonteCarloNode():
-    
-    def __init__(self, parent, play, state, possibleMoves):
-        
-        # Info unique to this node
-        self.play = play
-        self.state = state
-        
-        # Info for the tree
-        self.parent = parent
+class MonteCarloNode:
+
+    """
+    Assumes that mirrored board states are already dealt with
+    """
+    def __init__(self, parent: 'MonteCarloNode' = None, board: list[list[int]] = None, possible_moves: dict[int] = None):
+
+        self.board = board
         self.children = {}
+        self.parents = set([parent] if parent else [])
+
+        for move in possible_moves:
+            self.children[move] = None
         
-        # all children have possible move and their own child nodes
-        # and all child nodes are unexpanded at the start, hence none
-        # note that possibleMoves are also unexpanded at creation
-        for move in possibleMoves:           
-            self.children[str(move)] = {"play": move, "node": None}
-        
-        # Memory for Victor Moves
-        self.recommendedMove = -1
+        # Recommended Move from Minimax
+        self.recommended_move = -1
                
-        # MonteCarlo stuff for determining node
+        # MonteCarlo stuff for determining UCB1 values
         self.games = 0
-        self.wins = 0.0
-              
-            
-    # Gets the node corresponding to the given play
-    def ChildNode(self, play): 
-        child = self.children[str(play)]
-        if not child:
-            raise Exception("No such Move")
-        elif child['node'] == None:
-            raise Exception('Child not expanded')
-            
-        return child['node']
+        self.wins = 0
+        self.draws = 0
+        self.losses = 0
+
+    def GetChildNode(self, move):
+        return self.children[move]
 
     # Expand the child play and return the new child node
     def Expand(self, play, childState, unexpandedPlays):
@@ -63,23 +53,25 @@ class MonteCarloNode():
                 unexMoves.append(child['play'])
         return unexMoves
     
-    # See if is a fully expaned node
+
+    """
+    If any children are None (unexpanded), it is not fully expanded
+    """
     def IsFullyExpanded(self):
-        # If any children are None (unexpanded), it is not fully expanded
         for child in self.children.values():
             if not child['node']:
                 return False
         return True
-    
-    # If the node is a Leaf Node
+
     def IsLeaf(self):
         return not self.children
 
-    
-    # UCB1 Value of node,
-    def UCB1Value(self, bias=2):
-        # usually the bias parameter is 2
-        # the higher the bias, the more it favours unexplored plays
-        return (self.wins/self.games) + math.sqrt(bias* math.log(self.parent.games) / self.games)
+
+    ### NOTE: Use only the specific parent implementation of the node itself
+    # # UCB1 Value of node,
+    # def UCB1Value(self, bias):
+    #     # usually the bias parameter is 2
+    #     # the higher the bias, the more it favours unexplored plays
+    #     return (self.wins/self.games) + math.sqrt(bias* math.log(self.parent.games) / self.games)
 
   

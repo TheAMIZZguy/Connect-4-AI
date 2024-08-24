@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import random
-from state import State
 
 """
     Board Deciphering:
@@ -14,13 +13,13 @@ from state import State
         3 means a place you can put a chip
 """
 
-#the board is 6 rows with 7 columns
-startBoard = [[0,0,0,0,0,0,0],
-              [0,0,0,0,0,0,0],
-              [0,0,0,0,0,0,0],
-              [0,0,0,0,0,0,0],
-              [0,0,0,0,0,0,0],
-              [3,3,3,3,3,3,3]]
+# #the board is 6 rows with 7 columns
+# startBoard = [[0,0,0,0,0,0,0],
+#               [0,0,0,0,0,0,0],
+#               [0,0,0,0,0,0,0],
+#               [0,0,0,0,0,0,0],
+#               [0,0,0,0,0,0,0],
+#               [3,3,3,3,3,3,3]]
 
 """
 Game as a class initializes the board and moves the game along
@@ -94,9 +93,9 @@ class Game:
         mirrored_board_tuple = tuple(tuple(row) for row in mirrored_board)
         return hash(mirrored_board_tuple)
 
-    """
+    '''
     Makes the move from the player and updates the game accordingly
-    """
+    '''
     def MakeMove(self, col):
         # Make the move
         self.board[col][self.possible_moves[col]] = self.current_player

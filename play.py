@@ -39,7 +39,85 @@ class Play:
 
 
 
-def PlayGame():
+    def PlayGame(self):
+
+        # TODO SOMETHING ABOUT EXMOVE Clearing?
+
+        #################
+        # TODO extract this stuff
+        userPlayerString = input("Player 1 or 2? ")  # comment out if not human
+        userPlayer = int(userPlayerString)
+
+
+        # keep making moves and running until there is a winner (1,2,or 0)
+        while winner == -1:
+
+            print()
+            print("Player: ", self.game.current_player)
+
+            self.game.PrintBoard()
+
+            if userPlayer == self.game.current_player:
+                move = self.GetUserMove()
+            else:
+                move = self.GetAIMove()
+
+                # time to have the algorithm think for x minutes
+                # simulations to have it think for x simulations
+                # TODO update to newest versions/Add Minimax Hybrid
+                try:
+                    if currentlyInMini:
+                        if len(listOfRows1) > 1:
+                            totalSims += mcts.RunTreeSimulations(state, 49, True, listOfRows2[:-1], True)
+                        else:
+                            totalSims += mcts.RunTreeSimulations(state, 49, True, None, False)
+                        currentlyInMini = False
+                    else:
+                        if len(listOfRows2) > 1:
+                            totalSims += mcts.RunTreeSimulations(state, 12250, False, listOfRows2[:-1], True)
+                        else:
+                            totalSims += mcts.RunTreeSimulations(state, 12250, False, None, False)
+                        currentlyInMini = True
+                    # print("Player 2 ran in " , datetime.now() - t)
+                except Exception as e:
+                    print("Error: ", e)
+                    crashCount += 1
+                    print("Lol it crashed2 ;-;")
+                    if len(listOfRows1) > 1:
+                        totalSims += mcts.RunTreeSimulations(state, 7, False, listOfRows2[:-1], True)
+                    else:
+                        totalSims += mcts.RunTreeSimulations(state, 7, False, None, False)
+                    # totalSims += mcts.RunTreeSimulations(state,1000)
+
+                print(mcts.GetStats(state))
+                move = mcts.BestMove(state)
+                print("Chosen Play: ", move)
+
+            state = game.MakeMove(state, move)
+            winner = game.Winner(state)
+
+        #################
+        pass
+        # TODO, need to makesure all the txt and csv stuff is chill
+
+    # TODO, depreciate with UI
+    def GetUserMove(self):
+        move = -1
+        while move not in self.game.possible_moves.keys():
+            # print("Possible Moves: ", game.PossibleMoves(state))
+            user_col_string = input("Enter Your Move (1-7): ")
+            move = int(user_col_string) - 1
+
+        return move
+
+    def GetAIMove(self):
+        if self.thinking_method == "time":
+            mcts.RunTreeTime()
+            return mcts.BestMove(state)
+        return self.GetAIMoveMoves()
+
+
+
 
 for testedGame in range(1):
     print("\n\n===============\nSimulating game ", testedGame + 1)

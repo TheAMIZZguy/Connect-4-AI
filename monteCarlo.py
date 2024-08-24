@@ -11,33 +11,101 @@ import random
 from datetime import datetime
 from datetime import timedelta
 import threading
-import victor
+import MiniMax
 import csv
-from state import State
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-class MCTS():
+class MCTS:
      
     def __init__(self, game):
+        # General Information
         self.game = game
-        self.UCB1Bias = 2 #change bias here
-        #lets us get any node given a state
-        self.nodes = {} #{state: node}, give it a state as key, it will give node as value
-    
-    #if the state does not exit, create a parentless node for the root node
-    def MakeNode(self, state):
-        #checks if empty
-        if not self.nodes:
-            #get the possible moves of the board
-            possibleMoves = self.game.PossibleMoves(state)[:]
-            #create a new node, parentless
-            node = MonteCarloNode(None, None, state, possibleMoves)
-            #add the state as a node
-            self.nodes[tuple(state.playHistory)] = node
+        self.nodes = {}  # {boardHash: node}, get information from a board state, which is a node
 
-    #Runs through the tree, building the statistics for a set amount of minutes
-    #  this is the actual learning that runs the 4 steps of MCTS
-    def RunTreeTime(self, state, minutes_, usingMinimaxSelection, lom, midGame):
+        # UCB1 Variables
+        self.UCB1_bias = 2
+        self.win_weight = 1
+        self.draw_weight = 1
+        self.loss_weight = 1
+        self.MiniMaxBias = 0.35
+
+    def MakeNode(self, state):
+        if not self.nodes:
+            self.nodes[self.game.GetBoardHash()] = MonteCarloNode(parent=None, board=self.game.board, possible_moves=self.game.possible_moves)
+        # else:
+        #     self.nodes[self.game.GetBoardHash()] = MonteCarloNode(parent=None, board=self.game.board, possible_moves=self.game.possible_moves)
+        #TODO: do I use this outside of the initial parent?
+
+    def RunTreeTime(self, seconds: float = 5, usingMinimaxSelection: bool = True, lom, midGame):
+        # Create the root node for the tree
+        self.MakeNode(state)
+
+        # Info for Victor, the columns of moves
+        # LOM IS LIST OF MOVES DAMMIT
+        lomString = ""
+        if lom is not None:
+            lomString = "".join(lom)
+
+        endTime = datetime.now() + timedelta(minutes=minutes_)
+        while datetime.now() < endTime:
+            # Starting the first step, Selection
+            # print("Running Simulation")
+            if usingMinimaxSelection:
+                # start = datetime.now()
+                node = self.SelectionMininmax(state, midGame, lomString)
+                # print("MiniMax Sel took: ", datetime.now()-start)
+            else:
+                # start = datetime.now()
+                node = self.Selection(state)
+                # print("MCTS Sel took: ", datetime.now()-start)
+            # this checks if the selected node is a winning node
+            winner = self.game.Winner(node.state)
+
+            # if its not a leaf node, and it wasn't a winning node (double checking) then expand the node and simulate a game (MCTS steps 2 and 3)
+            if node.IsLeaf() == False and winner == -1:
+                # Starting the second step, Expansion
+                # print("Running Expansion")
+                node = self.Expansion(node)
+
+                # Starting the third step, Simulation
+                # print("Running Simulation")
+
+                # Instead of simulating just once, it will simulate X times
+                #  and select the most common value to minimize random chance
+                """
+                #start = datetime.now()    
+                result = []                
+                processes = []                
+
+                with ThreadPoolExecutor(max_workers=10) as executor:
+                    for num in range(9):
+                        processes.append(executor.submit(self.Simulation, state.board, state.player))
+
+                for task in as_completed(processes):
+                    result.append(int(task.result()))
+                    #print(int(task.result()))
+
+                winner = int(max(set(result), key=result.count))
+                """
+                # this is if there is no leaf parallelisation
+                winner = self.Simulation(state.board, state.player)
+
+                # print(datetime.now() - start)
+                # print("Winner is,",winner)
+
+            # print("Running BackPropagation")
+            # MCTS step 4, based on winner and the node
+            self.Backpropogation(node, winner)
+
+            simulations += 1
+        # print(simulations) #simulations of current move
+        return simulations  # to add to the total simulations
+
+    """
+    Runs through the tree, building the statistics for a set amount of minutes
+      this is the actual learning that runs the 4 steps of MCTS
+    """
+    def RunTreeTime(self, seconds: float = 5, usingMinimaxSelection: bool = True, lom, midGame):
         #Create the root node for the tree
         self.MakeNode(state)
         simulations = 0
@@ -179,7 +247,7 @@ class MCTS():
         bestMove = []
         maxSims = -100
         for move in posMoves:
-            childNode = node.ChildNode(move)
+            childNode = node.GetChildNode(move)
             if childNode.games > maxSims:
                 bestMove = move
                 maxSims = childNode.games
@@ -206,21 +274,19 @@ class MCTS():
             self.Expansion(self.nodes[state.Hash2()])
             self.Expansion(self.nodes[state.Hash2()])
             node = self.nodes[state.Hash()]
-        
-        #sets UCB1 bias
-        bias = 2
+
         while (node.IsFullyExpanded()) and (not node.IsLeaf()):
             moves = node.PossibleMoves()
             bestPlay = []
             bestUCB1 = -100
             #will loop through all the moves and select highest UCB1
             for move in moves: 
-                childUCB1 = node.ChildNode(move).UCB1Value(bias)
+                childUCB1 = node.GetChildNode(move).UCB1Value()
                 if childUCB1 > bestUCB1:
                     bestPlay = move
                     bestUCB1 = childUCB1
                     
-            node = node.ChildNode(bestPlay)
+            node = node.GetChildNode(bestPlay)
         
         return node
      
@@ -248,27 +314,25 @@ class MCTS():
         
         selectedMinimax = 7
         currentSelectionMoves = []
-        #sets UCB1 bias
-        bias = 2
         
         if not node.IsFullyExpanded():
             return node
         
-        while node.recommendedMove > -1 and (node.IsFullyExpanded()) and (not node.IsLeaf()):
-            selectedMinimax = node.recommendedMove          
+        while node.recommended_move > -1 and (node.IsFullyExpanded()) and (not node.IsLeaf()):
+            selectedMinimax = node.recommended_move
             moves = node.PossibleMoves()
             bestPlay = []
             bestUCB1 = -100
             #will loop through all the moves and select highest UCB1
             for move in moves: 
-                childUCB1 = node.ChildNode(move).UCB1Value(bias)
+                childUCB1 = node.GetChildNode(move).UCB1Value()
                 if move[1] == selectedMinimax:
                     childUCB1 += .350
                 if childUCB1 > bestUCB1:
                     bestPlay = move
                     bestUCB1 = childUCB1
                                
-            node = node.ChildNode(bestPlay)
+            node = node.GetChildNode(bestPlay)
             
             if (not node.IsFullyExpanded()) or (node.IsLeaf()):
                 return node    
@@ -327,11 +391,11 @@ class MCTS():
 
                 if datetime.now() > endTimer:
                     for move in moves: 
-                        childUCB1 = node.ChildNode(move).UCB1Value(bias)
+                        childUCB1 = node.GetChildNode(move).UCB1Value()
                         if childUCB1 > bestUCB1:
                             bestPlay = move
                             bestUCB1 = childUCB1
-                            node = node.ChildNode(bestPlay)
+                            node = node.GetChildNode(bestPlay)
             
                     if (not node.IsFullyExpanded()) or (node.IsLeaf()):
                         stop_event.set()
@@ -360,15 +424,15 @@ class MCTS():
             
             #will loop through all the moves and select highest UCB1
             for move in moves: 
-                childUCB1 = node.ChildNode(move).UCB1Value(bias)
+                childUCB1 = node.GetChildNode(move).UCB1Value()
                 if move[1] == selectedMinimax:
                     childUCB1 += .350
-                    node.recommendedMove = move[1]
+                    node.recommended_move = move[1]
                 if childUCB1 > bestUCB1:
                     bestPlay = move
                     bestUCB1 = childUCB1
                            
-            node = node.ChildNode(bestPlay)
+            node = node.GetChildNode(bestPlay)
             
             if (not node.IsFullyExpanded()) or (node.IsLeaf()):
                 stop_event.set()
