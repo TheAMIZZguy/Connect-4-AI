@@ -1,0 +1,49 @@
+* Have it so the Minimax runs first through its tree (parallelize it) and only after it reaches its depth does it start MCTS
+* Have the UCB1 be:  a*(wins/games)+b*(sqrt(ln(games_direct_parent)/games))+c*(Minimaxweight)
+Where a is exploitation, b is exploration, and c is heuristic
+Minimax will give a score of 0.35 for the move it considers best, 0.2 for second best, 0.1 for third best, -0.4 for worst, and -0.2 for second worst
+- Prioritizing best if there are only 3 moves or so.
+Note to self tha heuristic could be seen as a type of exploitation so try to aim for that to have maybe less weight
+Minimax will ONLY train at the start, and while some moves at depth of MCTS can have their own minimax score, it is not guaranteed
+The minimax ucb1 score of a node will only be considered if ALL the children have been considered (denoted by a fag on the parent node that they have searched all their children)
+
+
+Question to self
+- Minimax depth can be either of:
+-- Depth from the current state of the game
+--- This will mean the Minimax depth will only explore the tree by 1 level per turn, so it can actually run quite fast in this step
+--- But with a slow initialization, a depth up to 10 should be pre-explored so that turn 1 doesn't take forever
+--- And additionally the depth can be quite large (when a game ends up in a point of "just stalling", it can find that soon)
+-- Depth from the shallowest unexplored (and un-pruned) node
+--- This will take longer since it has to go deep and then explore a decent amount of the tree
+--- The values will need to be small (like only 1,2, or 3)
+--- It will be poor at the beginning while it has to expand the tree, but will be great at the endgame
+
+^ I think I will go for option 1
+
+
+Have a global saved MCTS node info that means that version of the AI just infinitely gets better. Same with Minimax
+And also a local saved, for dynamic difficulty
+
+
+All the args and choices I want
+1) Use MCTS, Minimax, or Hybrid
+1.1) Time or Searched Nodes
+1.1.1) Time (s) or nodes (int)
+1.2) Depth
+1.3) See 1.1 and 1.2
+1.4) Additionally given the choice of using the global searched trees for both
+
+2) Is Player 1 AI or Human. Is Player 2 AI or Human
+2.1) Apply 1 to either/both AI chosen options
+
+3) Customization Options for game
+3.1) Colour (from colour choice gradient)
+3.1.1) P1 Chips, P2 Chips, Board, Background
+3.2) Sound (or lack thereof, can add their own sound .mp3)
+3.2.1) Placing a chip, Winning
+3.3) Winner Text
+
+
+
+

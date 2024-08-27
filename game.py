@@ -94,11 +94,12 @@ class Game:
         return hash(mirrored_board_tuple)
 
     '''
-    Makes the move from the player and updates the game accordingly
+    Makes the move from the player and updates the game accordingly. Returns the row the play was made in
     '''
     def MakeMove(self, col):
         # Make the move
-        self.board[col][self.possible_moves[col]] = self.current_player
+        row = self.possible_moves[col]
+        self.board[col][row] = self.current_player
 
         # Change the player
         if self.current_player == 1:
@@ -112,6 +113,8 @@ class Game:
         else:
             self.possible_moves.pop(col)  # Remove if it's already at the top
 
+        return row
+
     def PrintBoard(self):
         for row in self.board:
             print(row)
@@ -121,14 +124,13 @@ class Game:
     Plays a random game from current position
     """
     def RandomGame(self):
-        hasWon = False
-        while not hasWon:
+        has_won = False
+        while not has_won:
             if len(self.possible_moves.keys()) == 0:
                 return 0
             col = random.choice(self.possible_moves.keys())
-            row = self.possible_moves[col]
-            self.MakeMove(col)
-            hasWon = self.CheckWin(row, col)
+            row = self.MakeMove(col)
+            has_won = self.CheckWin(row, col)
         return self.other_player
 
     """
