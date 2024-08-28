@@ -99,7 +99,7 @@ class Game:
     def MakeMove(self, col):
         # Make the move
         row = self.possible_moves[col]
-        self.board[col][row] = self.current_player
+        self.board[row][col] = self.current_player
 
         # Change the player
         if self.current_player == 1:
@@ -136,6 +136,7 @@ class Game:
     """
     The fast version of checking to see if a move leads to a win
     """
+    # TODO this doesnt work
     def CheckWin(self, row, col):
         def count_in_direction(delta_row, delta_col):
             count = 0

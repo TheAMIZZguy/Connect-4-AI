@@ -11,9 +11,8 @@ import random
 from datetime import datetime
 from datetime import timedelta
 import threading
-import miniMax
 import csv
-from concurrent.futures import ThreadPoolExecutor, as_completed
+
 
 class MCTS:
      

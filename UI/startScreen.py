@@ -64,8 +64,8 @@ class StartScreen:
         self.player2_colour = "#FFFF00"  # Default Yellow
         self.no_chip_colour = "#FFFFFF"  # Default White
         self.board_colour = "#0000FF"  # Default Blue
-        self.chip_sound_path = r"SaveData/sounds/chipdrop_8bit.mp3"
-        self.result_sound_path = r"SaveData/sounds/endgame_8bit.mp3"
+        self.chip_sound_path = r"./SaveData/sounds/chipdrop_8bit.mp3"
+        self.result_sound_path = r"./SaveData/sounds/endgame_8bit.mp3"
 
         # Load settings from previous session if available
         self.load_settings()
@@ -356,13 +356,13 @@ class StartScreen:
             "use_database": [self.use_database[0].get(), self.use_database[1].get()],
         }
 
-        os.makedirs("SaveData", exist_ok=True)
-        with open(os.path.join("SaveData", "settings.json"), "w") as f:
+        os.makedirs("../SaveData", exist_ok=True)
+        with open(os.path.join("../SaveData", "settings.json"), "w") as f:
             json.dump(settings, f)
 
     def load_settings(self):
         try:
-            with open(os.path.join("SaveData", "settings.json"), "r") as f:
+            with open(os.path.join("../SaveData", "settings.json"), "r") as f:
                 settings = json.load(f)
                 self.player1_colour = settings.get("player1_colour", self.player1_colour)
                 self.player2_colour = settings.get("player2_colour", self.player2_colour)

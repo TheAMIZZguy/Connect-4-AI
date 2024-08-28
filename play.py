@@ -1,6 +1,9 @@
 from game import Game
 # from monteCarlo import MCTS  # todo finish MCTS
 # from miniMax import MiniMax  # todo finish MiniMax
+from UI.boardUI import BoardUI
+
+from random import randint
 
 
 class Player:
@@ -37,58 +40,69 @@ class Play:
         self.player1 = player1
         self.player2 = player2
 
-        if not self.player1.is_human:
-            if self.player1.algorithm == "MCTS":
-                self.AI1 = MCTS(game)
-            elif self.player1.algorithm == "Minimax":
-                self.AI1 = MiniMax(game)
-            else:
-                self.AI1 = MCTS(game, True)
+        # if not self.player1.is_human:
+        #     if self.player1.algorithm == "MCTS":
+        #         self.AI1 = MCTS(game)
+        #     elif self.player1.algorithm == "Minimax":
+        #         self.AI1 = MiniMax(game)
+        #     else:
+        #         self.AI1 = MCTS(game, True)
+        #
+        # if not self.player2.is_human:
+        #     if self.player2.algorithm == "MCTS":
+        #         self.AI2 = MCTS(game)
+        #     elif self.player1.algorithm == "Minimax":
+        #         self.AI2 = MiniMax(game)
+        #     else:
+        #         self.AI2 = MCTS(game, True)
+        #     if self.player2.algorithm in ["MCTS", "Hybrid"] and not self.player2.use_database:
+        #         self.AI2.RunTreeSimulations(7)
 
-        if not self.player2.is_human:
-            if self.player2.algorithm == "MCTS":
-                self.AI2 = MCTS(game)
-            elif self.player1.algorithm == "Minimax":
-                self.AI2 = MiniMax(game)
-            else:
-                self.AI2 = MCTS(game, True)
-            if self.player2.algorithm in ["MCTS", "Hybrid"] and not self.player2.use_database:
-                self.AI2.RunTreeSimulations(7)
+        BoardUI.initialize(self)
 
     def PlayGame(self):
+        # Start with the initial board
+        BoardUI.update_board(self.game.board, human_turn=self.player1.is_human if self.game.current_player == 1 else self.player2.is_human)
+
         winner = False
         round = 1
         # keep making moves and running until there is a winner or the game is a draw
         while not winner and round < 22:
+            # self.game.PrintBoard()
+            BoardUI._root.update()
 
-            # TODO do all of this with UI and show changes to board state
-            print()
-            print("Player: ", self.game.current_player)
-
-            self.game.PrintBoard()
-
-            if self.player1 == self.game.current_player:
-                col = self.GetUserMove()
-            else:
-                col = self.GetAIMove()
+            while True:
+                if self.game.current_player == 1:
+                    if self.player1.is_human:
+                        col = self.GetUserMove()
+                    else:
+                        col = self.GetAIMove()
+                else:
+                    if self.player2.is_human:
+                        col = self.GetUserMove()
+                    else:
+                        col = self.GetAIMove()
+                if col in self.game.possible_moves.keys():
+                    break
 
             row = self.game.MakeMove(col)
             winner = self.game.CheckWin(row, col)
             round += 1
 
-        #################
-        pass
-        # TODO, trigger endgame screen in UI
+            BoardUI.update_board(self.game.board, human_turn=self.player1.is_human if self.game.current_player == 1 else self.player2.is_human)
+            BoardUI.draw_board()
 
-    # TODO, depreciate with UI clicks that get the move
+        return self.game.other_player
+
+
     def GetUserMove(self):
-        move = -1
-        while move not in self.game.possible_moves.keys():
-            # print("Possible Moves: ", game.PossibleMoves(state))
-            user_col_string = input("Enter Your Move (1-7): ")
-            move = int(user_col_string) - 1
-
-        return move
+        move = None
+        while move is None:
+            BoardUI._root.update()
+            move = BoardUI._selected_column
+        BoardUI._selected_column = None
+        print("HUMAN TECHNOLOGY: ", move)
+        return move - 1
 
     def GetAIMove(self):
         AI = self.AI1 if self.game.current_player == self.player1 else self.AI2
@@ -102,4 +116,10 @@ class Play:
                 AI.RunTreeSimulations(simulations=AI.MCTS_amount, use_database=AI.use_database)
 
             return AI.BestMove()
+
+    def GetAIMove(self):
+        move = randint(0,6)
+        print("AI TECHNOLOGY: ", move + 1)
+        return move
+
 
