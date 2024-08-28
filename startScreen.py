@@ -201,7 +201,8 @@ class StartScreen:
         # Save current settings to JSON
         self.save_settings()
 
-        self.root.quit()  # Close the window after starting the game
+        self.root.quit()
+        self.root.destroy()  # Close the window after starting the game
 
     def create_player(self, player_num, player_type, algorithm="Hybrid", method="time", mcts_amount="1", minimax_depth="1", use_database=False):
         if player_type == "Human":
