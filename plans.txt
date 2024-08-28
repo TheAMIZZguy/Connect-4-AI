@@ -3,6 +3,7 @@
 Where a is exploitation, b is exploration, and c is heuristic
 Minimax will give a score of 0.35 for the move it considers best, 0.2 for second best, 0.1 for third best, -0.4 for worst, and -0.2 for second worst
 - Prioritizing best if there are only 3 moves or so.
+- Turn into 100 if it is an immediately winning move
 Note to self tha heuristic could be seen as a type of exploitation so try to aim for that to have maybe less weight
 Minimax will ONLY train at the start, and while some moves at depth of MCTS can have their own minimax score, it is not guaranteed
 The minimax ucb1 score of a node will only be considered if ALL the children have been considered (denoted by a fag on the parent node that they have searched all their children)

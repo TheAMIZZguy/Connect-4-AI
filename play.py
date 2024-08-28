@@ -1,70 +1,86 @@
 from game import Game
-from monteCarlo import MCTS
-from datetime import datetime
-import csv
+# from monteCarlo import MCTS  # todo finish MCTS
+# from miniMax import MiniMax  # todo finish MiniMax
 
+
+class Player:
+    def __init__(self, is_human: bool = False, player_num: int = 1, algorithm: str = "Hybrid",
+                 MCTS_method: str = "time", MCTS_amount = 1, MINI_depth = 1, use_database: bool = False):
+        self.is_human = is_human
+        self.player_num = player_num  # 1 or 2
+
+        self.algorithm = algorithm  # "MCTS" or "Minimax" or "Hybrid"
+
+        if self.algorithm in ["MCTS", "Hybrid"]:
+
+            self.MCTS_method = MCTS_method  # 'time' (s) or 'moves' (n)
+
+            if MCTS_method == "moves" and not isinstance(MCTS_amount, int):
+                IOError("thinking_amount must be an integer when considering move depth")
+            self.MCTS_amount = MCTS_amount
+
+        if self.algorithm in ["Minimax", "Hybrid"]:
+            self.MINI_depth = MINI_depth  # 'time' (s) or 'moves' (n)
+
+        self.use_database = use_database
 
 class Play:
-    # TODO add all options, generalize more
     """
     :arg thinking_method: 'time' or 'moves', how long the AI thinks per turn
     :arg thinking_amount: positive number either in seconds (double, if thinking_method = 'time') or in number of nodes to explore (integer, if thinking_method = 'moves')
     :arg human_player: 0 if there is no human player, 1 if human is player 1, 2 if human is player 2
     :arg use_database: should the AI use the saved database?
     """
-    def __init__(self, thinking_method: str = "time", thinking_amount = 1, human_player: int = 0, use_database: bool = False):
+    def __init__(self, player1: Player, player2: Player):
         self.game = Game()
-        self.AI1 = MCTS(game)  # If the AI is player 1
-        self.AI2 = MCTS(game)  # If the AI is player 2
-        # This initializes AI2 to start with at turn 2
-        self.AI2.RunTreeSimulations(state, 7, False, None, False)
 
-        if thinking_method not in ["time", "moves"]:
-            IOError("thinking_method must be one of 'time' or 'moves'")
-        self.thinking_method = thinking_method
-        if thinking_amount <= 0:
-            IOError("thinking_amount must be positive")
-        if thinking_method == "moves" and not isinstance(thinking_amount, int):
-            IOError("thinking_amount must be an integer when considering move depth")
-        self.thinking_amount = thinking_amount
+        self.player1 = player1
+        self.player2 = player2
 
-        if thinking_method not in [0, 1, 2]:
-            IOError("human_player must be one of 0, 1, or 2")
-        self.human_player = human_player
+        if not self.player1.is_human:
+            if self.player1.algorithm == "MCTS":
+                self.AI1 = MCTS(game)
+            elif self.player1.algorithm == "Minimax":
+                self.AI1 = MiniMax(game)
+            else:
+                self.AI1 = MCTS(game, True)
 
-        self.use_database = use_database
-
-
+        if not self.player2.is_human:
+            if self.player2.algorithm == "MCTS":
+                self.AI2 = MCTS(game)
+            elif self.player1.algorithm == "Minimax":
+                self.AI2 = MiniMax(game)
+            else:
+                self.AI2 = MCTS(game, True)
+            if self.player2.algorithm in ["MCTS", "Hybrid"] and not self.player2.use_database:
+                self.AI2.RunTreeSimulations(7)
 
     def PlayGame(self):
-
-        #################
-        # TODO extract this stuff with UI
-        userPlayerString = input("Player 1 or 2? ")  # comment out if not human
-        userPlayer = int(userPlayerString)
-
         winner = False
-        # keep making moves and running until there is a winner (1,2,or 0)
-        while not winner:
+        round = 1
+        # keep making moves and running until there is a winner or the game is a draw
+        while not winner and round < 22:
 
+            # TODO do all of this with UI and show changes to board state
             print()
             print("Player: ", self.game.current_player)
 
             self.game.PrintBoard()
 
-            if userPlayer == self.game.current_player:
+            if self.player1 == self.game.current_player:
                 col = self.GetUserMove()
             else:
                 col = self.GetAIMove()
 
             row = self.game.MakeMove(col)
             winner = self.game.CheckWin(row, col)
+            round += 1
 
         #################
         pass
-        # TODO, game over
+        # TODO, trigger endgame screen in UI
 
-    # TODO, depreciate with UI
+    # TODO, depreciate with UI clicks that get the move
     def GetUserMove(self):
         move = -1
         while move not in self.game.possible_moves.keys():
@@ -74,11 +90,16 @@ class Play:
 
         return move
 
-    # TODO make this more generalized for all options
     def GetAIMove(self):
-        if self.thinking_method == "time":
-            self.AI1.RunTreeTime()
-            return mcts.BestMove(state)
+        AI = self.AI1 if self.game.current_player == self.player1 else self.AI2
 
-        return self.GetAIMoveMoves()
+        if AI.algorithm == "Minimax":
+            return AI.BestMove(depth=AI.MINI_depth, use_database=AI.use_database)
+        else:
+            if AI.MCTS_method == "time":
+                AI.RunTreeTime(time=AI.MCTS_amount, use_database=AI.use_database)
+            else:
+                AI.RunTreeSimulations(simulations=AI.MCTS_amount, use_database=AI.use_database)
+
+            return AI.BestMove()
 

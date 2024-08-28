@@ -11,7 +11,7 @@ import random
 from datetime import datetime
 from datetime import timedelta
 import threading
-import MiniMax
+import miniMax
 import csv
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -23,11 +23,13 @@ class MCTS:
         self.nodes = {}  # {boardHash: node}, get information from a board state, which is a node
 
         # UCB1 Variables
-        self.UCB1_bias = 2
         self.win_weight = 1
         self.draw_weight = 1
         self.loss_weight = 1
-        self.MiniMaxBias = 0.35
+
+        self.win_bias = 1
+        self.UCB1_bias = 2
+        self.MiniMax_bias = 1
 
     def MakeNode(self, state):
         if not self.nodes:
