@@ -6,8 +6,6 @@ class EndScreen:
         self.root.title("Game Over")
         self.root.geometry("400x200")
 
-        # TODO play ending sound
-
         # Display the winner
         if winner is None:
             message = "It's a Draw!"

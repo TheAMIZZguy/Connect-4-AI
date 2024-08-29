@@ -133,7 +133,6 @@ class Game:
     """
     The fast version of checking to see if a move leads to a win
     """
-    # TODO this doesnt work
     def CheckWin(self, row, col):
         def count_in_direction(delta_row, delta_col):
             count = 0
