@@ -92,6 +92,7 @@ class Play:
             BoardUI.update_board(self.game.board, human_turn=self.player1.is_human if self.game.current_player == 1 else self.player2.is_human)
             BoardUI.draw_board()
 
+        BoardUI.play_result_sound()
         return self.game.other_player
 
 

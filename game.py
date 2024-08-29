@@ -102,10 +102,7 @@ class Game:
         self.board[row][col] = self.current_player
 
         # Change the player
-        if self.current_player == 1:
-            self.current_player = 2
-        else:
-            self.current_player = 1
+        self.current_player, self.other_player  = self.other_player, self.current_player
 
         # Update possible moves
         if self.possible_moves[col] > 0:

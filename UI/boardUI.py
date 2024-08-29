@@ -31,7 +31,7 @@ class BoardUI:
     @staticmethod
     def load_settings():
         try:
-            with open(os.path.join("..\\SaveData", "settings.json"), "r") as f:
+            with open(os.path.join(".\\SaveData", "settings.json"), "r") as f:
                 settings = json.load(f)
                 BoardUI.player1_colour = settings.get("player1_colour", "#FF0000")
                 BoardUI.player2_colour = settings.get("player2_colour", "#FFFF00")
@@ -76,6 +76,11 @@ class BoardUI:
     @staticmethod
     def play_chip_sound():
         pygame.mixer.music.load(BoardUI.chip_sound_path)
+        pygame.mixer.music.play()
+
+    @staticmethod
+    def play_result_sound():
+        pygame.mixer.music.load(BoardUI.result_sound_path)
         pygame.mixer.music.play()
 
     @staticmethod

@@ -356,13 +356,16 @@ class StartScreen:
             "use_database": [self.use_database[0].get(), self.use_database[1].get()],
         }
 
-        os.makedirs("../SaveData", exist_ok=True)
-        with open(os.path.join("../SaveData", "settings.json"), "w") as f:
-            json.dump(settings, f)
+        # os.makedirs("../SaveData", exist_ok=True)
+        # with open(os.path.join("../SaveData", "settings.json"), "w") as f:
+        #     json.dump(settings, f)
 
     def load_settings(self):
+        settings_path = os.path.join(".\\SaveData", "settings.json")
+        print("Loading settings from:", os.path.abspath(settings_path))
+
         try:
-            with open(os.path.join("../SaveData", "settings.json"), "r") as f:
+            with open(os.path.join(".\\SaveData", "settings.json"), "r") as f:
                 settings = json.load(f)
                 self.player1_colour = settings.get("player1_colour", self.player1_colour)
                 self.player2_colour = settings.get("player2_colour", self.player2_colour)
@@ -370,6 +373,8 @@ class StartScreen:
                 self.board_colour = settings.get("board_colour", self.board_colour)
                 self.chip_sound_path = settings.get("chip_sound_path", self.chip_sound_path)
                 self.result_sound_path = settings.get("result_sound_path", self.result_sound_path)
+
+                print("what")
 
                 for column in [0,1]:
                     self.player_type[column].set(settings.get("player_type")[column])
