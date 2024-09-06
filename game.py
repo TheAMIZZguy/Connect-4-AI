@@ -10,7 +10,6 @@ import random
         0 means place without 'chip'
         1 means player 1 chip
         2 means player 2 chip
-        3 means a place you can put a chip
 """
 
 # #the board is 6 rows with 7 columns
@@ -19,7 +18,7 @@ import random
 #               [0,0,0,0,0,0,0],
 #               [0,0,0,0,0,0,0],
 #               [0,0,0,0,0,0,0],
-#               [3,3,3,3,3,3,3]]
+#               [0,0,0,0,0,0,0]]
 
 """
 Game as a class initializes the board and moves the game along
@@ -81,17 +80,22 @@ class Game:
 
         return (move_count % 2) + 1, possible_moves
 
-    def GetBoardHash(self):
-        board_tuple = tuple(tuple(row) for row in self.board)
+    @staticmethod
+    def GetBoardHash(board: list[list[int]]):
+        board_tuple = tuple(tuple(row) for row in board)
         return hash(board_tuple)
 
-    def GetMirroredBoardHash(self):
+    @staticmethod
+    def GetMirroredBoardHash(board: list[list[int]]):
         # Mirror the board by reversing each row
-        mirrored_board = [row[::-1] for row in self.board]
+        mirrored_board = [row[::-1] for row in board]
 
         # Convert the mirrored board to a tuple of tuples and hash it
         mirrored_board_tuple = tuple(tuple(row) for row in mirrored_board)
         return hash(mirrored_board_tuple)
+
+    def GetMirroredColumn(self, col):
+        return 6 - col
 
     '''
     Makes the move from the player and updates the game accordingly. Returns the row the play was made in
@@ -127,17 +131,17 @@ class Game:
                 return 0
             col = random.choice(self.possible_moves.keys())
             row = self.MakeMove(col)
-            has_won = self.CheckWin(row, col)
+            has_won = self.CheckWin(row, col, self.other_player)  # Other player since we already made the move
         return self.other_player
 
     """
     The fast version of checking to see if a move leads to a win
     """
-    def CheckWin(self, row, col):
+    def CheckWin(self, row, col, player):
         def count_in_direction(delta_row, delta_col):
             count = 0
             r, c = row + delta_row, col + delta_col
-            while 0 <= r < len(self.board) and 0 <= c < len(self.board[0]) and self.board[r][c] == self.other_player:
+            while 0 <= r < len(self.board) and 0 <= c < len(self.board[0]) and self.board[r][c] == player:
                 count += 1
                 r += delta_row
                 c += delta_col
@@ -163,37 +167,38 @@ class Game:
     """
     checks for winner, returns the int of the player who won, 0 for draw, and -1 for no winner
     """
-    def Winner(self):
+    @staticmethod
+    def Winner(board):
 
-        #Horizontal Win
-        for row in self.board:
-            for num in range(0,4):#so it doesnt go out of index range
-                #print(num)cc
-                if row[num] == row[num+1] == row[num+2] == row[num+3] and not (row[num] == 3 or row[num] == 0):
-                    #since it is 4 in a row, return the value of the winning spot
+        # Horizontal Win
+        for row in board:
+            for num in range(4):  # So it doesn't go out of index range
+                if (row[num] != 0) and (row[num] == row[num+1] == row[num+2] == row[num+3]):
+                    #  Since it is 4 in a row, return the value of the winning spot
                     return row[num]
         
-        #Vertical Win
-        for col in range(0,7): #using range so its based on the index
-            for row in range(0,3): #less rows
-                #print(num)
-                if self.board[row][col] == self.board[row+1][col] == self.board[row+2][col] == self.board[row+3][col] and not (self.board[row][col] == 3 or self.board[row][col] == 0):
-                    return self.board[row][col]
+        # Vertical Win
+        for col in range(7):
+            for row in range(3):
+                if (board[row][col] != 0) and (board[row][col] == board[row+1][col] == board[row+2][col] == board[row+3][col]):
+                    return board[row][col]
                 
-        #Left diagonal win
-        for row in range(0,3): #using range so its based on the index
-            for col in range(0,4): #the rest is the same
-                #print(num)
-                if self.board[row][col] == self.board[row+1][col+1] == self.board[row+2][col+2] == self.board[row+3][col+3] and not (self.board[row][col] == 3 or self.board[row][col] == 0):
-                    return self.board[row][col]
+        # Left diagonal win
+        for row in range(3):
+            for col in range(4):
+                if (board[row][col] != 0) and (board[row][col] == board[row+1][col+1] == board[row+2][col+2] == board[row+3][col+3]):
+                    return board[row][col]
                 
-        #Right diagonal win
-        for row in range(0,3): #using range so its based on the index
-            for col in [6,5,4,3]: #it needs to loop from the right
-                #print(num)
-                if self.board[row][col] == self.board[row+1][col-1] == self.board[row+2][col-2] == self.board[row+3][col-3] and not (self.board[row][col] == 3 or self.board[row][col] == 0):
-                    return self.board[row][col]
-        
-        #-1 means that there is no winner... yet
-        return -1
+        # Right diagonal win
+        for row in range(0,3):
+            for col in [6,5,4,3]:
+                if (board[row][col] != 0) and (board[row][col] == board[row+1][col-1] == board[row+2][col-2] == board[row+3][col-3]):
+                    return board[row][col]
+
+        for row in board:
+            for item in row:
+                if item == 0:
+                    return 0  # Draw
+
+        return -1  # No winner
     

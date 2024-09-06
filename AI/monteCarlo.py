@@ -6,7 +6,7 @@ Created on Mon Feb 25, 2019
 @author: Andres Zepeda
 """
 
-from monteCarloNode import MonteCarloNode
+from node import Node
 import random
 from datetime import datetime
 from datetime import timedelta
@@ -32,7 +32,7 @@ class MCTS:
 
     def MakeNode(self, state):
         if not self.nodes:
-            self.nodes[self.game.GetBoardHash()] = MonteCarloNode(parent=None, board=self.game.board, possible_moves=self.game.possible_moves)
+            self.nodes[self.game.GetBoardHash()] = Node(parent=None, board=self.game.board, possible_moves=self.game.possible_moves)
         # else:
         #     self.nodes[self.game.GetBoardHash()] = MonteCarloNode(parent=None, board=self.game.board, possible_moves=self.game.possible_moves)
         #TODO: do I use this outside of the initial parent?

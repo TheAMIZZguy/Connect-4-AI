@@ -86,7 +86,7 @@ class Play:
                     break
 
             row = self.game.MakeMove(col)
-            winner = self.game.CheckWin(row, col)
+            winner = self.game.CheckWin(row, col, self.game.other_player)  # Other player since we already made the move
             round += 1
 
             BoardUI.update_board(self.game.board, human_turn=self.player1.is_human if self.game.current_player == 1 else self.player2.is_human)
