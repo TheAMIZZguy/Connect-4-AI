@@ -6,15 +6,18 @@ class Node:
     """
     Assumes that mirrored board states are already dealt with
     """
-    def __init__(self, parent: 'Node' = None, board: list[list[int]] = None, possible_moves: dict[int] = None,
+    def __init__(self, parent: 'Node' = None, board: list[list[int]] = None, possible_moves: dict[int] = None, current_player: int = None,
                  heuristic_score: int = None, miniMax_score: int = None, is_fully_expanded : bool = False, depth_search: int = 0):
 
         self.board = board
         self.children = {}
         self.parents = set([parent] if parent else [])
         self.is_fully_expanded = is_fully_expanded
+        self.current_player = current_player
+        self.other_player = 2 if self.current_player == 1 else 1
+        self.possible_moves = possible_moves
 
-        for move in possible_moves:
+        for move in self.possible_moves.keys():
             self.children[move] = None
         
         # Recommended Move from Minimax

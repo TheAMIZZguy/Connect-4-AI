@@ -1,14 +1,13 @@
-# cache.py
-
 import sqlite3
 import pickle
 from game import Game
+from AI.node import Node
 
 # Global cache for nodes, shared between both AIs
 node_cache = {}
 
 
-def save_node(node, db_path='current_game.db'):
+def SaveNode(node, db_path='current_game.db'):
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
     cur.execute('''CREATE TABLE IF NOT EXISTS nodes (board_hash TEXT PRIMARY KEY, node BLOB)''')
@@ -21,7 +20,7 @@ def save_node(node, db_path='current_game.db'):
     conn.close()
 
 
-def load_node(board, db_path='current_game.db'):
+def LoadNode(board, db_path='current_game.db'):
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
 
@@ -35,7 +34,7 @@ def load_node(board, db_path='current_game.db'):
     return None
 
 
-def get_node(board, db_path='current_game.db'):
+def GetNode(board, db_path='current_game.db'):
     # First, try getting the regular board hash
     board_hash = Game.GetBoardHash(board)
 
@@ -44,7 +43,7 @@ def get_node(board, db_path='current_game.db'):
         return node_cache[board_hash]
 
     # Try loading from the database
-    node = load_node(board, db_path)
+    node = LoadNode(board, db_path)
     if node:
         node_cache[board_hash] = node  # Add to cache if found
         return node
@@ -57,7 +56,7 @@ def get_node(board, db_path='current_game.db'):
         return node_cache[mirrored_board_hash]
 
     # Try loading the mirrored board from the database
-    node = load_node(board, db_path)
+    node = LoadNode(board, db_path)
     if node:
         node_cache[mirrored_board_hash] = node  # Add to cache if found
         return node
@@ -66,20 +65,22 @@ def get_node(board, db_path='current_game.db'):
     return None
 
 
-def create_new_node(node, db_path='current_game.db'):
+def CreateNewNode(board, parent, possible_moves, current_player, db_path='current_game.db'):
     # First, check if the node already exists by calling get_node
-    board = node.board
-    existing_node = get_node(board, db_path)
+    existing_node = GetNode(board, db_path)
 
     if existing_node:
         return existing_node  # If the node already exists, return it
 
+    # If the node doesn't exist, create a new one
+    new_node = Node(parent=parent, board=board, possible_moves=possible_moves, current_player=current_player)
+
     # Add the new node to the cache using the board hash
     board_hash = Game.GetBoardHash(board)
-    node_cache[board_hash] = node
+    node_cache[board_hash] = new_node
 
     # Optionally save the new node to the database
-    save_node(node, db_path)
+    SaveNode(new_node, db_path)
 
     return node
 

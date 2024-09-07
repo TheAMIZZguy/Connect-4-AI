@@ -1,6 +1,6 @@
 from game import Game
 # from monteCarlo import MCTS  # todo finish MCTS
-# from miniMax import MiniMax  # todo finish MiniMax
+from AI.miniMax import MiniMax
 from UI.boardUI import BoardUI
 
 from random import randint
@@ -85,8 +85,12 @@ class Play:
                 if col in self.game.possible_moves.keys():
                     break
 
-            row = self.game.MakeMove(col)
-            winner = self.game.CheckWin(row, col, self.game.other_player)  # Other player since we already made the move
+            row = self.game.possible_moves[col]
+            # note: may need to be Game.MakeMove not self.game.MakeMove
+            self.game.board, self.game.possible_moves = self.game.MakeMove(self.game.board, self.game.current_player, self.game.possible_moves, col, row)
+            self.game.current_player, self.game.other_player = self.game.other_player, self.game.current_player
+
+            winner = Game.CheckWin(self.game.board, row, col, self.game.other_player)  # Other player since we already made the move
             round += 1
 
             BoardUI.update_board(self.game.board, human_turn=self.player1.is_human if self.game.current_player == 1 else self.player2.is_human)
@@ -109,7 +113,7 @@ class Play:
         AI = self.AI1 if self.game.current_player == self.player1 else self.AI2
 
         if AI.algorithm == "Minimax":
-            return AI.BestMove(depth=AI.MINI_depth, use_database=AI.use_database)
+            return AI.BestMove(depth=AI.MINI_depth)
         else:
             if AI.MCTS_method == "time":
                 AI.RunTreeTime(time=AI.MCTS_amount, use_database=AI.use_database)

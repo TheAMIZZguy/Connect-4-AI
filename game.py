@@ -94,27 +94,30 @@ class Game:
         mirrored_board_tuple = tuple(tuple(row) for row in mirrored_board)
         return hash(mirrored_board_tuple)
 
-    def GetMirroredColumn(self, col):
+    @staticmethod
+    def GetMirroredColumn(col):
         return 6 - col
 
     '''
     Makes the move from the player and updates the game accordingly. Returns the row the play was made in
     '''
-    def MakeMove(self, col):
+    @staticmethod
+    def MakeMove(board, current_player, possible_moves, col, row):
         # Make the move
-        row = self.possible_moves[col]
-        self.board[row][col] = self.current_player
+        new_board = [row[:] for row in board]
+        new_board[row][col] = current_player
 
         # Change the player
-        self.current_player, self.other_player  = self.other_player, self.current_player
+        # next_player = 1 if current_player == 2 else 2
 
         # Update possible moves
-        if self.possible_moves[col] > 0:
-            self.possible_moves[col] -= 1  # Move up by 1 due to gravity
+        new_possible_moves = possible_moves.copy()
+        if new_possible_moves[col] > 0:
+            new_possible_moves[col] -= 1  # Move up by 1 due to gravity
         else:
-            self.possible_moves.pop(col)  # Remove if it's already at the top
+            new_possible_moves.pop(col)  # Remove if it's already at the top
 
-        return row
+        return new_board, new_possible_moves #, next_player
 
     def PrintBoard(self):
         for row in self.board:
@@ -122,26 +125,33 @@ class Game:
         print("-")
 
     """
-    Plays a random game from current position
+    Plays a random game from board position
     """
-    def RandomGame(self):
+    @staticmethod
+    def RandomGame(board: list[list[int]] = None, current_player: int = None, possible_moves : dict[int] = None):
+        game = Game(board, current_player, possible_moves)
         has_won = False
         while not has_won:
-            if len(self.possible_moves.keys()) == 0:
+            if len(game.possible_moves.keys()) == 0:
                 return 0
-            col = random.choice(self.possible_moves.keys())
-            row = self.MakeMove(col)
-            has_won = self.CheckWin(row, col, self.other_player)  # Other player since we already made the move
-        return self.other_player
+            col = random.choice(game.possible_moves.keys())
+            row = game.possible_moves[col]
+            new_board, new_possible_moves = game.MakeMove(game.board, game.current_player, game.possible_moves, col, row)
+            game.board = new_board
+            game.possible_moves = new_possible_moves
+            game.current_player, game.other_player = game.other_player, game.current_player
+            has_won = Game.CheckWin(game.board, row, col, game.other_player)  # Other player since we already made the move
+        return game.other_player  # Other player since we already won but before the "current" player has made a move
 
     """
     The fast version of checking to see if a move leads to a win
     """
-    def CheckWin(self, row, col, player):
+    @staticmethod
+    def CheckWin(board, row, col, player):
         def count_in_direction(delta_row, delta_col):
             count = 0
             r, c = row + delta_row, col + delta_col
-            while 0 <= r < len(self.board) and 0 <= c < len(self.board[0]) and self.board[r][c] == player:
+            while 0 <= r < len(board) and 0 <= c < len(board[0]) and board[r][c] == player:
                 count += 1
                 r += delta_row
                 c += delta_col

@@ -2,244 +2,169 @@ import random
 import math
 from node import Node
 from game import Game
-from cache import get_node, save_node, create_new_node
+from cache import GetNode, SaveNode, CreateNewNode
 
-# TODOS:
-# Make as a class
-# recieve a board position and return a column
-# the minimax args are default in the init
-# use game stuff for is terminal? and  stuff
-#     (note to self, send current player info to winning move in game, so that this can use it to find terminal easier)
+
+# Constants
+COLUMN_COUNT = 7
+ROW_COUNT = 6
+PLAYER1 = 1
+PLAYER2 = 2
+EMPTY = 0
+
+# Heuristics Values
+WINDOW_LENGTH = 4
+CENTER_SCORE = 3
+FOUR_SCORE = math.inf
+THREE_SCORE = 5
+TWO_SCORE = 2
+ENEMY_THREE_SCORE = 4
+
 
 class MiniMax:
 
-    def __init__(self, game):
+    # Assuming we start at the first turn
+    def __init__(self, game, use_database=False):
         self.game = game
-        self.current_node = Node(board=self.game.board, possible_moves=self.game.possible_moves)
-        create_new_node(self.current_node)
+        self.db_path = "current_game.db"
+        if use_database:
+            self.db_path = "database.db"
 
-        # Heuristics Values
-        self.window_length = 4
-        self.center_score = 3
-        self.four_score = math.inf
-        self.three_score = 5
-        self.two_score = 2
-        self.enemy_three_score = 4
+        self.current_node = CreateNewNode(board=self.game.board, parent=None, possible_moves=self.game.possible_moves, current_player=1, db_path=self.db_path)
 
-        # Constants
-        self.COLUMN_COUNT = 7
-        self.ROW_COUNT = 6
-        self.PLAYER1 = 1
-        self.PLAYER2 = 2
-        self.EMPTY = 0
 
     """
-    Returns: best_move, node_score
+    Returns: node_score via MiniMax
     """
-    def minimax(self, depth, alpha, beta, is_maximizing_player):
-        valid_locations = self.game.possible_moves.keys()
-        is_terminal = self.game.Winner()
-
-        # TODO confirm that None is the best choice here
-        if depth == 0:
-            return None, self.score_position(self.game.current_player)
-
-        if is_terminal == self.PLAYER1:
-            return None, math.inf
-        elif is_terminal == self.PLAYER2:
-            return None, -math.inf
-        elif is_terminal == self.EMPTY:
-            return None, 0
-
-        if is_maximizing_player:
-            value = -math.inf
-            column = random.choice(valid_locations)  # TODO: could just choose the first value
-            for col in valid_locations:
-                # row = self.game.possible_moves[col]  # TODO: can you use node for this
-                row = get_next_open_row(board, col)
-                b_copy = board.copy()
-                drop_piece(b_copy, row, col, AI_PIECE)
-                new_score = minimax(b_copy, depth - 1, alpha, beta, False)[1]
-                if new_score > value:
-                    value = new_score
-                    column = col
-                alpha = max(alpha, value)
-                if alpha >= beta:
-                    break
-            return column, value
-
-        else:  # Minimizing player
-            value = math.inf
-            column = random.choice(valid_locations)  # could just choose the first value
-            for col in valid_locations:
-                row = get_next_open_row(board, col)
-                b_copy = board.copy()
-                drop_piece(b_copy, row, col, PLAYER_PIECE)
-                new_score = minimax(b_copy, depth - 1, alpha, beta, True)[1]
-                if new_score < value:
-                    value = new_score
-                    column = col
-                beta = min(beta, value)
-                if alpha >= beta:
-                    break
-            return column, value
-
-    """
-        Returns: best_move, node_score
-        """
-
-    def depth_search(self, node, depth, alpha, beta, is_maximizing_player):
+    def DepthSearch(self, node, depth, alpha, beta):
         possible_moves = node.possible_moves.keys()
         is_terminal = Game.Winner(node.board)
 
-        # TODO confirm that None is the best choice here
+        if node.depth >= depth:
+            return node.miniMax_score
+
         if depth == 0:
-            return None, self.score_position(self.game.current_player)
+            if node.heuristic_score is None:
+                node.heuristic_score = MiniMax.ScorePosition(node.board, node.current_player)
+            return node.heuristic_score
 
-        if is_terminal == self.PLAYER1:
-            return None, math.inf
-        elif is_terminal == self.PLAYER2:
-            return None, -math.inf
-        elif is_terminal == self.EMPTY:
-            return None, 0
+        if is_terminal == PLAYER1:
+            node.heuristic_score = math.inf
+            node.miniMax_score = math.inf
+            node.depth = math.inf
+            return math.inf
+        elif is_terminal == PLAYER2:
+            node.heuristic_score = -math.inf
+            node.miniMax_score = -math.inf
+            node.depth = math.inf
+            return -math.inf
+        elif is_terminal == EMPTY:
+            node.heuristic_score = 0
+            node.miniMax_score = 0
+            node.depth = math.inf
+            return 0
 
-        if is_maximizing_player:
+        if node.current_player == 1: # Is maximizing player
             value = -math.inf
-            column = random.choice(possible_moves)  # TODO: could just choose the first value
             for col in possible_moves:
                 row = node.possible_moves[col]
+                new_board, new_possible_moves = Game.MakeMove(node.board, node.current_player, node.possible_moves, row, col)
                 # get the next node
-                next_node =
-                b_copy = board.copy()
-                drop_piece(b_copy, row, col, AI_PIECE)
-                new_score = minimax(b_copy, depth - 1, alpha, beta, False)[1]
-                if new_score > value:
-                    value = new_score
-                    column = col
+                next_node = CreateNewNode(board=new_board, parent=node, possible_moves=new_possible_moves, current_player=node.other_player, db_path=self.db_path)
+                if next_node.DepthSearch < depth - 1:
+                    next_node.miniMax_score = self.DepthSearch(next_node, depth - 1, alpha, beta) # recursive
+                if next_node.miniMax_score > value:
+                    value = next_node.miniMax_score
+                    node.recommended_move = col
                 alpha = max(alpha, value)
                 if alpha >= beta:
                     break
-            return column, value
-
-        else:  # Minimizing player
+        else:  # Minimizing player, effectively the same code but it (guessing) is marginally faster to do it like this, TODO confirm
             value = math.inf
-            column = random.choice(possible_moves)  # could just choose the first value
             for col in possible_moves:
-                row = get_next_open_row(board, col)
-                b_copy = board.copy()
-                drop_piece(b_copy, row, col, PLAYER_PIECE)
-                new_score = minimax(b_copy, depth - 1, alpha, beta, True)[1]
-                if new_score < value:
-                    value = new_score
-                    column = col
+                row = node.possible_moves[col]
+                new_board, new_possible_moves = Game.MakeMove(node.board, node.current_player, node.possible_moves, row, col)
+                # get the next node
+                next_node = CreateNewNode(board=new_board, parent=node, possible_moves=new_possible_moves, current_player=node.other_player, db_path=self.db_path)
+                if next_node.DepthSearch < depth - 1:
+                    next_node.miniMax_score = self.DepthSearch(next_node, depth - 1, alpha, beta)  # recursive
+                if next_node.miniMax_score < value:
+                    value = next_node.miniMax_score
+                    node.recommended_move = col
                 beta = min(beta, value)
                 if alpha >= beta:
                     break
-            return column, value
+        node.miniMax_score = value
+        node.DepthSearch = depth
+        SaveNode(node, db_path=self.db_path)
+        return value
 
-    def get_valid_locations(board):
-        valid_locations = []
-        for col in range(COLUMN_COUNT):
-            if is_valid_location(board, col):
-                valid_locations.append(col)
-        return valid_locations
+    def BestMove(self, depth: int = 1):
 
+        node = GetNode(self.game.board, db_path=self.db_path)
 
-    # AI.algorithm == "Minimax":
-    # return AI.BestMove(depth=AI.MINI_depth, use_database=AI.use_database)
+        if node.DepthSearch < depth:
+            _ = self.DepthSearch(node, depth, -math.inf, math.inf)
 
-    def pick_best_move(self, depth: int = 0, use_database: bool = False):
-        node =
-
-        valid_locations = get_valid_locations(board)
-        best_score = -10000
-        best_col = random.choice(valid_locations)
-        for col in valid_locations:
-            row = get_next_open_row(board, col)
-            temp_board = board.copy()
-            drop_piece(temp_board, row, col, piece)
-            score = score_position(temp_board, piece)
-            if score > best_score:
-                best_score = score
-                best_col = col
-
-        return best_col
-
-
-    # def pick_best_move(board, piece):
-    #     valid_locations = get_valid_locations(board)
-    #     best_score = -10000
-    #     best_col = random.choice(valid_locations)
-    #     for col in valid_locations:
-    #         row = get_next_open_row(board, col)
-    #         temp_board = board.copy()
-    #         drop_piece(temp_board, row, col, piece)
-    #         score = score_position(temp_board, piece)
-    #         if score > best_score:
-    #             best_score = score
-    #             best_col = col
-    #
-    #     return best_col
+        return node.recommended_move
 
     """
     Score Heuristic Function from https://github.com/KeithGalli/Connect4-Python/blob/master/connect4_with_ai.py#L120
     Note that this is very simple, does not fully consider a move that would make the enemy/you immediately win
       exclusively focuses on how many you get in a row
     """
-    def score_position(self, player):
+    @staticmethod
+    def ScorePosition(board, player):
         score = 0
 
         ## Score center column
-        center_array = [int(i) for i in list(self.game.board[:, self.COLUMN_COUNT // 2])]
+        center_array = [int(i) for i in list(board[:, COLUMN_COUNT // 2])]
         center_count = center_array.count(player)
-        score += center_count * self.center_score
+        score += center_count * CENTER_SCORE
 
         ## Score Horizontal
-        for r in range(self.ROW_COUNT):
-            row_array = [int(i) for i in list(self.game.board[r, :])]
-            for c in range(self.COLUMN_COUNT - 3):
-                window = row_array[c:c + self.window_length]
-                score += self.evaluate_window(window, player)
+        for r in range(ROW_COUNT):
+            row_array = [int(i) for i in list(board[r, :])]
+            for c in range(COLUMN_COUNT - 3):
+                window = row_array[c:c + WINDOW_LENGTH]
+                score += MiniMax.EvaluateWindow(window, player)
 
         ## Score Vertical
-        for c in range(self.COLUMN_COUNT):
-            col_array = [int(i) for i in list(self.game.board[:, c])]
-            for r in range(self.ROW_COUNT - 3):
-                window = col_array[r:r + self.window_length]
-                score += self.evaluate_window(window, player)
+        for c in range(COLUMN_COUNT):
+            col_array = [int(i) for i in list(board[:, c])]
+            for r in range(ROW_COUNT - 3):
+                window = col_array[r:r + WINDOW_LENGTH]
+                score += MiniMax.EvaluateWindow(window, player)
 
         ## Score positive sloped diagonal
-        for r in range(self.ROW_COUNT - 3):
-            for c in range(self.COLUMN_COUNT - 3):
-                window = [self.game.board[r + i][c + i] for i in range(self.window_length)]
-                score += self.evaluate_window(window, player)
+        for r in range(ROW_COUNT - 3):
+            for c in range(COLUMN_COUNT - 3):
+                window = [board[r + i][c + i] for i in range(WINDOW_LENGTH)]
+                score += MiniMax.EvaluateWindow(window, player)
 
-        for r in range(self.ROW_COUNT - 3):
-            for c in range(self.COLUMN_COUNT - 3):
-                window = [self.game.board[r + 3 - i][c + i] for i in range(self.window_length)]
-                score += self.evaluate_window(window, player)
+        for r in range(ROW_COUNT - 3):
+            for c in range(COLUMN_COUNT - 3):
+                window = [board[r + 3 - i][c + i] for i in range(WINDOW_LENGTH)]
+                score += MiniMax.EvaluateWindow(window, player)
 
         return score
 
-    def evaluate_window(self, window, current_player):
+    @staticmethod
+    def EvaluateWindow(window, current_player):
         score = 0
-        other_player = self.PLAYER1
-        if current_player == self.PLAYER1:
-            other_player = self.PLAYER2
+        other_player = PLAYER1
+        if current_player == PLAYER1:
+            other_player = PLAYER2
 
         if window.count(current_player) == 4:
-            score += self.four_score
-        elif window.count(current_player) == 3 and window.count(self.EMPTY) == 1:
-            score += self.three_score
-        elif window.count(current_player) == 2 and window.count(self.EMPTY) == 2:
-            score += self.two_score
+            score += FOUR_SCORE
+        elif window.count(current_player) == 3 and window.count(EMPTY) == 1:
+            score += THREE_SCORE
+        elif window.count(current_player) == 2 and window.count(EMPTY) == 2:
+            score += TWO_SCORE
 
-        if window.count(other_player) == 3 and window.count(self.EMPTY) == 1:
-            score -= self.enemy_three_score
+        if window.count(other_player) == 3 and window.count(EMPTY) == 1:
+            score -= ENEMY_THREE_SCORE
 
         return score
 
-    # # Ask for Player 2 Input
-    if turn == AI and not game_over:
-
-        col, minimax_score = minimax(board, 5, -math.inf, math.inf, True)
